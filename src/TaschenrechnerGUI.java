@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class TaschenrechnerGUI extends JFrame implements ActionListener {
@@ -12,8 +13,10 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
     private static final String AC = "AC";
     private static final String C = "C";
     private static final String COMMA = ",";
+    private static final String HISTORY = "Verlauf";
 
     private final JTextField eingabeFeld;
+    private final ArrayList<String> historyList;
 
     public TaschenrechnerGUI() {
         // Setze Titel und Layout
@@ -26,6 +29,7 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
         // Erstelle GUI-Elemente
         eingabeFeld = new JTextField();
         eingabeFeld.setFont(new Font("Arial", Font.PLAIN, 24));
+        historyList = new ArrayList<>();
         JButton[] zahlenButtons = new JButton[10];
         for (int i = 0; i < 10; i++) {
             zahlenButtons[i] = new JButton(String.valueOf(i));
@@ -40,7 +44,8 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
         JButton gleichButton = createButton(EQUALS);
         JButton acButton = createButton(AC);
         JButton cButton = createButton(C);
-
+        JButton historyButton = createButton(HISTORY);
+        
         // Füge Elemente zum Frame hinzu
         add(eingabeFeld, BorderLayout.NORTH);
         JPanel centerPanel = new JPanel(new GridLayout(5, 4));
@@ -66,6 +71,11 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
         centerPanel.add(gleichButton);
         add(centerPanel, BorderLayout.CENTER);
 
+        // Füge Verlauf-Button hinzu
+        JPanel southPanel = new JPanel(new GridLayout(1, 1));
+        southPanel.add(historyButton);
+        add(southPanel, BorderLayout.SOUTH);
+
         // Setze Größe und Sichtbarkeit
         setSize(400, 300);
         setVisible(true);
@@ -81,6 +91,7 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         String action = e.getActionCommand();
+
         String eingabe = eingabeFeld.getText();
 
         switch (action) {
@@ -122,12 +133,17 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
                     }
                 }
                 double ergebnis = stack.pop();
+                historyList.add(eingabe + " = " + ergebnis);
                 eingabe += " = " + ergebnis;
                 eingabeFeld.setText(eingabe);
                 return;
             }
             case PLUS, MINUS, MULTIPLY, DIVIDE -> {
                 addOperation(action);
+                return;
+            }
+            case HISTORY -> {
+                showHistory();
                 return;
             }
         }
@@ -138,6 +154,28 @@ public class TaschenrechnerGUI extends JFrame implements ActionListener {
                 return;
             }
         }
+    }
+
+    private void showHistory() {
+        JDialog historyDialog = new JDialog(this, "Verlauf");
+        historyDialog.setLayout(new BorderLayout());
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        for (String historyItem : historyList) {
+            listModel.addElement(historyItem);
+        }
+        JList<String> historyList = new JList<>(listModel);
+        JScrollPane scrollPane = new JScrollPane(historyList);
+        historyDialog.add(scrollPane, BorderLayout.CENTER);
+
+        JButton clearButton = new JButton("Löschen");
+        clearButton.addActionListener(e -> {
+            historyDialog.dispose();
+            this.historyList.clear();
+        });
+        historyDialog.add(clearButton, BorderLayout.SOUTH);
+
+        historyDialog.setSize(400, 300);
+        historyDialog.setVisible(true);
     }
 
     private void addOperation(String operation) {
